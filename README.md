@@ -44,7 +44,6 @@ OpenComputers (1.7.10) 用スクリプトです。
 | `dust` | `{ transposerAddress, busSide, trashSide, busSlot }`。`busSide`=Output Bus / `trashSide`=Trashcan |
 | `plasmaCoefficient` | 必要 plasma 量の係数（既定 `144`）。**自機の要求量と合わない場合は要調整** |
 | `pollInterval` | dust 検知のポーリング間隔（秒、既定 `0.5`） |
-| `settleDelay` | dust 検知後、液体量を読むまでの安定待ち（秒、既定 `0.2`） |
 
 > アドレスは OpenComputers の **Analyzer** で機器を右クリックすると取得できます（先頭 8 文字程度の部分一致で可）。
 > `side` は `bottom=0 top=1 north=2 south=3 west=4 east=5`。

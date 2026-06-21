@@ -8,8 +8,6 @@
 --   4. database + Input ME Interface の fake pattern にエンコードして発注
 --   5. 発注成功時のみ：液体を Input Hatch へ再循環し、dust を Trashcan へ廃棄
 --
--- 参考実装 (docs/GTNH-OC-God-Forge-Control) と異なり、ME網走査やディスク往復を
--- 行わず Transposer で各機器を直接読み書きするため高速・簡潔。
 -- =============================================================================
 
 local component = require("component")
@@ -239,11 +237,6 @@ local function runCycle()
   if plasmaList[element] == nil then
     io.stderr:write("不明な dust: "..tostring(fullLabel).."（廃棄せず保持）\n")
     return false
-  end
-
-  -- 液体が Output Hatch に揃うまで少し待つ
-  if config.settleDelay and config.settleDelay > 0 then
-    os.sleep(config.settleDelay)
   end
 
   -- 3) 液体量読み取り & 必要 plasma 量計算
