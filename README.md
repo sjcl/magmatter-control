@@ -3,8 +3,6 @@
 GregTech New Horizons の **Heliofusion Exoticizer** で Molten Magmatter を自動生産する
 OpenComputers (1.7.10) 用スクリプトです。
 
-参考実装 [GTNH-OC-God-Forge-Control](https://github.com/Navatusein/GTNH-OC-God-Forge-Control)
-
 ## 仕組み
 
 1. **Output Bus の dust を検知**（= 1 サイクル分の出力が揃った合図）
@@ -72,6 +70,14 @@ main
 
 ## 注意
 
-- `plasmaCoefficient` は参考実装の `144`（1 dust = 144 fluid_drop）を踏襲しています。
-  生産が過不足する場合はこの値を調整してください。
-- Input ME Interface の入力側サブネットは、CPU すべてに **Crafting Monitor** を装備しておく必要があります（参考実装と同様）。
+- Input ME Interface の入力側サブネットは、CPU すべてに **Crafting Monitor** を装備しておく必要があります。
+
+## クレジット
+
+本プロジェクトは [GTNH-OC-God-Forge-Control](https://github.com/Navatusein/GTNH-OC-God-Forge-Control) を参考に実装しています。設計やロジックの一部はこのプロジェクトに由来します。
+
+- 原作者: Bohdan Kutsulima ([@Navatusein](https://github.com/Navatusein))
+- ライセンス: [MIT License](https://github.com/Navatusein/GTNH-OC-God-Forge-Control/blob/main/LICENSE)
+
+> Copyright (c) 2025 Bohdan Kutsulima
+> Licensed under the MIT License.
