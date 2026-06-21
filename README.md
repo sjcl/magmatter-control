@@ -7,7 +7,7 @@ OpenComputers (1.7.10) 用スクリプトです。
 
 1. **Output Bus の dust を検知**（= 1 サイクル分の出力が揃った合図）
 2. **2 つの Output Hatch の液体量**（Spatially Enlarged Fluid / Tachyon Rich Temporal Fluid）を読む
-3. 必要 plasma 量を計算： `ceil(|液体A − 液体B| × plasmaCoefficient)`
+3. 必要 plasma 量を計算： `ceil(|液体A − 液体B| × 144)`（1 dust = 144 fluid_drop）
 4. **dust のラベルから plasma 種類を判定**
 5. database + Input ME Interface の **fake pattern にエンコードして発注**
 6. 発注成功時のみ：液体を **Input Hatch へ再循環**し、dust を **Trashcan へ廃棄**
@@ -40,7 +40,6 @@ OpenComputers (1.7.10) 用スクリプトです。
 | `databaseAddress` | 通常は `nil`（`component.database` を自動使用）。複数ある場合のみ指定 |
 | `fluidSources` | Output Hatch ×2。各 `{ name, transposerAddress, sourceSide, sourceTank, sinkSide }`。`sourceSide`=Hatch 向き / `sinkSide`=Input Hatch 向き。どちらが Spatial / Tachyon かは区別不要（順不同） |
 | `dust` | `{ transposerAddress, busSide, trashSide, busSlot }`。`busSide`=Output Bus / `trashSide`=Trashcan |
-| `plasmaCoefficient` | 必要 plasma 量の係数（既定 `144`）。**自機の要求量と合わない場合は要調整** |
 | `pollInterval` | dust 検知のポーリング間隔（秒、既定 `0.5`） |
 
 > アドレスは OpenComputers の **Analyzer** で機器を右クリックすると取得できます（先頭 8 文字程度の部分一致で可）。

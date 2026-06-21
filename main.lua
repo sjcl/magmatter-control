@@ -38,6 +38,12 @@ local plasmaList = {
 }
 
 -- -----------------------------------------------------------------------------
+-- 必要 plasma 量の係数： amount = ceil(|amountA - amountB| * PLASMA_PER_DUST)
+-- 1 dust = 144 fluid_drop。この値はどの環境でも固定。
+-- -----------------------------------------------------------------------------
+local PLASMA_PER_DUST = 144
+
+-- -----------------------------------------------------------------------------
 -- コンポーネント解決
 -- -----------------------------------------------------------------------------
 local function discoverProxy(address, name, ctype)
@@ -241,7 +247,7 @@ local function runCycle()
 
   -- 3) 液体量読み取り & 必要 plasma 量計算
   local amounts = readFluidAmounts()
-  local amount = math.ceil(math.abs((amounts[1] or 0) - (amounts[2] or 0)) * config.plasmaCoefficient)
+  local amount = math.ceil(math.abs((amounts[1] or 0) - (amounts[2] or 0)) * PLASMA_PER_DUST)
 
   -- 必要量ゼロ：発注せず再循環＆廃棄のみ
   if amount <= 0 then
