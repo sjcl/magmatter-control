@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Magmatter 生産制御 config.lua ジェネレータ</title>
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --card: #ffffff;
+    --border: #d8dce3;
+    --text: #1f2329;
+    --muted: #6b7280;
+    --accent: #2563eb;
+    --accent-d: #1d4ed8;
+    --danger: #b91c1c;
+    --danger-bg: #fef2f2;
+    --warn: #92600a;
+    --warn-bg: #fffbeb;
+    --code-bg: #0f172a;
+    --code-fg: #e2e8f0;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif;
+    color: var(--text);
+    background: var(--bg);
+    line-height: 1.6;
+  }
+  header {
+    padding: 20px 24px;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+  }
+  header h1 { margin: 0 0 4px; font-size: 1.3rem; }
+  header p { margin: 0; color: var(--muted); font-size: 0.9rem; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 20px 24px 60px; }
+  .layout { display: grid; grid-template-columns: 1fr; gap: 24px; }
+  @media (min-width: 980px) { .layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+
+  .toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 16px; }
+  .toolbar .global-field { display: flex; align-items: center; gap: 6px; }
+  .toolbar label { font-size: 0.85rem; color: var(--muted); }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .card-head h3 { margin: 0; font-size: 1.05rem; }
+
+  .subgroup { border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-top: 12px; background: #fafbfc; }
+  .subgroup > .sub-title { font-weight: 600; font-size: 0.9rem; margin-bottom: 8px; color: #374151; }
+
+  .fields-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+  .field { display: flex; flex-direction: column; gap: 3px; }
+  .field.span { grid-column: 1 / -1; }
+  .field label { font-size: 0.78rem; color: var(--muted); }
+  input, select {
+    font: inherit;
+    padding: 7px 9px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: #fff;
+    width: 100%;
+  }
+  input:focus, select:focus { outline: 2px solid #bfdbfe; border-color: var(--accent); }
+
+  button {
+    font: inherit;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: #fff;
+    border-radius: 6px;
+    padding: 7px 12px;
+  }
+  button:hover { background: #f1f3f5; }
+  button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  button.primary:hover { background: var(--accent-d); }
+  button.del { color: var(--danger); border-color: #f0c7c7; }
+  button.del:hover { background: var(--danger-bg); }
+  button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  .add-btn { width: 100%; padding: 10px; border-style: dashed; color: var(--accent); }
+
+  .preview-pane { position: sticky; top: 16px; }
+  .preview-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .preview-head h2 { margin: 0; font-size: 1.05rem; }
+  pre.preview {
+    background: var(--code-bg);
+    color: var(--code-fg);
+    padding: 14px;
+    border-radius: 10px;
+    overflow: auto;
+    max-height: 62vh;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 0.82rem;
+    line-height: 1.5;
+    margin: 0;
+    white-space: pre;
+  }
+  .copy-ok { color: #16a34a; font-size: 0.85rem; margin-left: 8px; opacity: 0; transition: opacity 0.2s; }
+  .copy-ok.show { opacity: 1; }
+
+  .messages { margin-bottom: 10px; display: flex; flex-direction: column; gap: 6px; }
+  .msg { font-size: 0.83rem; padding: 6px 10px; border-radius: 6px; }
+  .msg.error { color: var(--danger); background: var(--danger-bg); border: 1px solid #f3c9c9; }
+  .msg.warn { color: var(--warn); background: var(--warn-bg); border: 1px solid #f3e2bd; }
+  .msg.ok { color: #166534; background: #f0fdf4; border: 1px solid #c4e8cd; }
+
+  details.help { margin-top: 24px; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 6px 16px; }
+  details.help summary { cursor: pointer; font-weight: 600; padding: 8px 0; }
+  details.help table { border-collapse: collapse; font-size: 0.85rem; margin: 8px 0; }
+  details.help td, details.help th { border: 1px solid var(--border); padding: 4px 10px; text-align: left; }
+  details.help code { background: #eef0f3; padding: 1px 5px; border-radius: 4px; }
+  details.help ul { margin: 8px 0; padding-left: 20px; }
+  details.help li { margin: 4px 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Magmatter 生産制御 — <code>config.lua</code> ジェネレータ</h1>
+  <p>フォームに入力すると <code>config.lua</code> が生成されます。「クリップボードにコピー」してゲーム内エディタへ貼り付けてください（保存不要）。複数台にも対応。</p>
+</header>
+
+<div class="wrap">
+  <div class="layout">
+    <div class="form-pane">
+      <div class="toolbar">
+        <div class="global-field">
+          <label for="pollInterval">pollInterval（秒・プロセス共通）</label>
+          <input id="pollInterval" type="number" min="0" step="0.1" style="width:90px" value="0.5">
+        </div>
+      </div>
+
+      <div id="machines"></div>
+
+      <button type="button" id="addMachine" class="add-btn">＋ 台を追加</button>
+    </div>
+
+    <div class="preview-pane">
+      <div class="preview-head">
+        <h2>config.lua プレビュー</h2>
+        <div>
+          <button type="button" id="copyBtn" class="primary">クリップボードにコピー</button>
+          <span id="copyOk" class="copy-ok">コピーしました</span>
+        </div>
+      </div>
+      <div id="messages" class="messages"></div>
+      <pre id="preview" class="preview"></pre>
+    </div>
+  </div>
+
+  <details class="help">
+    <summary>入力のヒント / 配置要件</summary>
+    <ul>
+      <li>アドレスは OpenComputers の <strong>Analyzer</strong> で機器を右クリックすると取得できます（先頭8文字程度の部分一致でOK）。</li>
+      <li><strong>Fluid A / B</strong> は 2 つの Output Hatch（Spatially Enlarged Fluid / Tachyon Rich Temporal Fluid）。どちらがどちらかは区別不要（順不同）。</li>
+      <li>各 <strong>Output Hatch 用 Transposer</strong> は、その Output Hatch（sourceSide）と Input Hatch（sinkSide）の両方に隣接させてください。</li>
+      <li><strong>dust 用 Transposer</strong> は Output Bus（busSide）と Trashcan（trashSide）の両方に隣接させてください。</li>
+      <li><strong>Database</strong> は通常空欄でOK（<code>component.database</code> を自動使用）。<strong>複数台のときは各台に専用アドレスが必須</strong>です。</li>
+      <li>複数台では <strong>inputMeInterfaceAddress と databaseAddress を台ごとに別物</strong>にしてください（共有すると fake recipe 名が衝突し起動エラーになります）。</li>
+    </ul>
+    <p><strong>side の対応:</strong></p>
+    <table>
+      <tr><th>side</th><th>値</th></tr>
+      <tr><td>bottom</td><td>0</td></tr>
+      <tr><td>top</td><td>1</td></tr>
+      <tr><td>north</td><td>2</td></tr>
+      <tr><td>south</td><td>3</td></tr>
+      <tr><td>west</td><td>4</td></tr>
+      <tr><td>east</td><td>5</td></tr>
+    </table>
+  </details>
+</div>
+
+<script>
+  "use strict";
+
+  var SIDES = [["bottom", 0], ["top", 1], ["north", 2], ["south", 3], ["west", 4], ["east", 5]];
+
+  // 状態（DOM 非依存。生成・検証関数はこの state 形を受け取る）
+  var state = { pollInterval: "0.5", machines: [] };
+
+  function newMachine(n) {
+    return {
+      name: "台" + n,
+      inputMeInterfaceAddress: "",
+      databaseAddress: "",
+      fluidA: { name: "Fluid A", transposer: "", sourceSide: "north", sourceTank: "1", sinkSide: "south" },
+      fluidB: { name: "Fluid B", transposer: "", sourceSide: "north", sourceTank: "1", sinkSide: "south" },
+      dust:   { transposer: "", busSide: "north", trashSide: "south", busSlot: "1" }
+    };
+  }
+
+  // ---------------------------------------------------------------------------
+  // 純粋ロジック（DOM 非依存・Node からも検証可能）
+  // ---------------------------------------------------------------------------
+  function luaStr(s) {
+    return '"' + String(s == null ? "" : s).replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"';
+  }
+  function intOr(v, d) {
+    var n = parseInt(v, 10);
+    return isFinite(n) ? n : d;
+  }
+  function numOr(v, d) {
+    var n = parseFloat(v);
+    return isFinite(n) ? n : d;
+  }
+  function fluidLua(f) {
+    return "{ name = " + luaStr(f.name) +
+      ", transposerAddress = " + luaStr((f.transposer || "").trim()) +
+      ", sourceSide = sides." + f.sourceSide +
+      ", sourceTank = " + intOr(f.sourceTank, 1) +
+      ", sinkSide = sides." + f.sinkSide + " }";
+  }
+  function machineLua(m) {
+    var db = (m.databaseAddress || "").trim() ? luaStr(m.databaseAddress.trim()) : "nil";
+    var L = [];
+    L.push("    {");
+    L.push("      name = " + luaStr(m.name) + ",");
+    L.push("      inputMeInterfaceAddress = " + luaStr((m.inputMeInterfaceAddress || "").trim()) + ",");
+    L.push("      databaseAddress = " + db + ",");
+    L.push("      fluidSources = {");
+    L.push("        " + fluidLua(m.fluidA) + ",");
+    L.push("        " + fluidLua(m.fluidB) + ",");
+    L.push("      },");
+    L.push("      dust = { transposerAddress = " + luaStr((m.dust.transposer || "").trim()) +
+      ", busSide = sides." + m.dust.busSide +
+      ", trashSide = sides." + m.dust.trashSide +
+      ", busSlot = " + intOr(m.dust.busSlot, 1) + " },");
+    L.push("    },");
+    return L.join("\n");
+  }
+  function generateLua(st) {
+    var L = [];
+    L.push('local sides = require("sides")');
+    L.push("");
+    L.push("local config = {");
+    L.push("  pollInterval = " + numOr(st.pollInterval, 0.5) + ",");
+    L.push("  machines = {");
+    st.machines.forEach(function (m) { L.push(machineLua(m)); });
+    L.push("  },");
+    L.push("}");
+    L.push("");
+    L.push("return config");
+    return L.join("\n");
+  }
+  function validate(st) {
+    var msgs = [];
+    var ms = st.machines;
+    ms.forEach(function (m, i) {
+      var tag = (m.name && m.name.trim()) || ("#" + (i + 1));
+      if (!(m.inputMeInterfaceAddress || "").trim()) msgs.push({ level: "warn", text: "[" + tag + "] inputMeInterfaceAddress が空です" });
+      if (!(m.fluidA.transposer || "").trim()) msgs.push({ level: "warn", text: "[" + tag + "] Fluid A の transposerAddress が空です" });
+      if (!(m.fluidB.transposer || "").trim()) msgs.push({ level: "warn", text: "[" + tag + "] Fluid B の transposerAddress が空です" });
+      if (!(m.dust.transposer || "").trim()) msgs.push({ level: "warn", text: "[" + tag + "] dust の transposerAddress が空です" });
+    });
+    if (ms.length > 1) {
+      var seenIface = {}, seenDb = {};
+      ms.forEach(function (m, i) {
+        var tag = (m.name && m.name.trim()) || ("#" + (i + 1));
+        var db = (m.databaseAddress || "").trim();
+        var iface = (m.inputMeInterfaceAddress || "").trim();
+        if (!db) {
+          msgs.push({ level: "error", text: "[" + tag + "] 複数台では databaseAddress が必須です" });
+        } else {
+          var key = db.slice(0, 8).toLowerCase();
+          if (seenDb[key]) msgs.push({ level: "error", text: "[" + tag + "] databaseAddress が他の台と重複（先頭8文字: " + key + "）。台ごとに別の Database を割り当ててください" });
+          seenDb[key] = true;
+        }
+        if (iface) {
+          if (seenIface[iface]) msgs.push({ level: "error", text: "[" + tag + "] inputMeInterfaceAddress が他の台と重複。台ごとに別の Input ME Interface を割り当ててください" });
+          seenIface[iface] = true;
+        }
+      });
+    }
+    return msgs;
+  }
+
+  // ---------------------------------------------------------------------------
+  // DOM 構築（init 内でのみ実行）
+  // ---------------------------------------------------------------------------
+  function el(tag, attrs, children) {
+    var e = document.createElement(tag);
+    if (attrs) {
+      for (var k in attrs) {
+        if (k === "class") e.className = attrs[k];
+        else if (k === "text") e.textContent = attrs[k];
+        else if (k === "style") e.setAttribute("style", attrs[k]);
+        else e.setAttribute(k, attrs[k]);
+      }
+    }
+    (children || []).forEach(function (c) {
+      e.appendChild(typeof c === "string" ? document.createTextNode(c) : c);
+    });
+    return e;
+  }
+  function field(labelText, inputEl, span) {
+    return el("div", { class: span ? "field span" : "field" }, [el("label", { text: labelText }), inputEl]);
+  }
+  function textInput(value, ph, oninput) {
+    var i = el("input", { type: "text", value: value || "", placeholder: ph || "" });
+    i.addEventListener("input", function (e) { oninput(e.target.value); updatePreview(); });
+    return i;
+  }
+  function numInput(value, attrs, oninput) {
+    var i = el("input", Object.assign({ type: "number", value: value }, attrs || {}));
+    i.addEventListener("input", function (e) { oninput(e.target.value); updatePreview(); });
+    return i;
+  }
+  function sideSelect(value, onchange) {
+    var s = el("select");
+    SIDES.forEach(function (pair) {
+      var o = el("option", { value: pair[0], text: pair[0] + " (" + pair[1] + ")" });
+      if (pair[0] === value) o.selected = true;
+      s.appendChild(o);
+    });
+    s.addEventListener("change", function (e) { onchange(e.target.value); updatePreview(); });
+    return s;
+  }
+  function fluidGroup(title, f) {
+    var g = el("div", { class: "subgroup" }, [el("div", { class: "sub-title", text: title })]);
+    var grid = el("div", { class: "fields-grid" });
+    grid.appendChild(field("name", textInput(f.name, "Fluid A", function (v) { f.name = v; })));
+    grid.appendChild(field("transposerAddress", textInput(f.transposer, "aaaaaaaa-…", function (v) { f.transposer = v; }), true));
+    grid.appendChild(field("sourceSide（Output Hatch 向き）", sideSelect(f.sourceSide, function (v) { f.sourceSide = v; })));
+    grid.appendChild(field("sinkSide（Input Hatch 向き）", sideSelect(f.sinkSide, function (v) { f.sinkSide = v; })));
+    grid.appendChild(field("sourceTank", numInput(f.sourceTank, { min: 1, step: 1 }, function (v) { f.sourceTank = v; })));
+    g.appendChild(grid);
+    return g;
+  }
+  function dustGroup(d) {
+    var g = el("div", { class: "subgroup" }, [el("div", { class: "sub-title", text: "dust（Output Bus → Trashcan）" })]);
+    var grid = el("div", { class: "fields-grid" });
+    grid.appendChild(field("transposerAddress", textInput(d.transposer, "aaaaaaaa-…", function (v) { d.transposer = v; }), true));
+    grid.appendChild(field("busSide（Output Bus 向き）", sideSelect(d.busSide, function (v) { d.busSide = v; })));
+    grid.appendChild(field("trashSide（Trashcan 向き）", sideSelect(d.trashSide, function (v) { d.trashSide = v; })));
+    grid.appendChild(field("busSlot", numInput(d.busSlot, { min: 1, step: 1 }, function (v) { d.busSlot = v; })));
+    g.appendChild(grid);
+    return g;
+  }
+  function buildCard(m, idx) {
+    var card = el("div", { class: "card" });
+    var head = el("div", { class: "card-head" }, [el("h3", { text: "台 " + (idx + 1) })]);
+    var del = el("button", { class: "del", type: "button", text: "× 削除" });
+    if (state.machines.length <= 1) del.disabled = true;
+    del.addEventListener("click", function () {
+      if (state.machines.length <= 1) return;
+      state.machines.splice(idx, 1);
+      renderMachines();
+      updatePreview();
+    });
+    head.appendChild(del);
+    card.appendChild(head);
+
+    var top = el("div", { class: "fields-grid" });
+    top.appendChild(field("name（表示用ラベル）", textInput(m.name, "台1", function (v) { m.name = v; })));
+    top.appendChild(field("inputMeInterfaceAddress", textInput(m.inputMeInterfaceAddress, "aaaaaaaa-…", function (v) { m.inputMeInterfaceAddress = v; })));
+    top.appendChild(field("databaseAddress（空欄=自動 / 複数台は必須）", textInput(m.databaseAddress, "空欄で component.database を自動使用", function (v) { m.databaseAddress = v; }), true));
+    card.appendChild(top);
+
+    card.appendChild(fluidGroup("Fluid A（Output Hatch 1）", m.fluidA));
+    card.appendChild(fluidGroup("Fluid B（Output Hatch 2）", m.fluidB));
+    card.appendChild(dustGroup(m.dust));
+    return card;
+  }
+  function renderMachines() {
+    var container = document.getElementById("machines");
+    container.innerHTML = "";
+    state.machines.forEach(function (m, idx) { container.appendChild(buildCard(m, idx)); });
+  }
+  function updatePreview() {
+    document.getElementById("preview").textContent = generateLua(state);
+    var box = document.getElementById("messages");
+    box.innerHTML = "";
+    var msgs = validate(state);
+    if (msgs.length === 0) {
+      box.appendChild(el("div", { class: "msg ok", text: "OK — 問題は見つかりませんでした。" }));
+      return;
+    }
+    msgs.forEach(function (mm) {
+      box.appendChild(el("div", { class: "msg " + (mm.level === "error" ? "error" : "warn"), text: (mm.level === "error" ? "エラー: " : "注意: ") + mm.text }));
+    });
+  }
+  function copyToClipboard(text) {
+    function feedback() {
+      var ok = document.getElementById("copyOk");
+      ok.classList.add("show");
+      setTimeout(function () { ok.classList.remove("show"); }, 1500);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(feedback, fallback);
+    } else {
+      fallback();
+    }
+    function fallback() {
+      var ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      try { document.execCommand("copy"); feedback(); } catch (e) { alert("コピーに失敗しました。プレビューを手動で選択してコピーしてください。"); }
+      document.body.removeChild(ta);
+    }
+  }
+  function init() {
+    state.machines.push(newMachine(1));
+    var poll = document.getElementById("pollInterval");
+    poll.value = state.pollInterval;
+    poll.addEventListener("input", function (e) { state.pollInterval = e.target.value; updatePreview(); });
+    document.getElementById("addMachine").addEventListener("click", function () {
+      state.machines.push(newMachine(state.machines.length + 1));
+      renderMachines();
+      updatePreview();
+    });
+    document.getElementById("copyBtn").addEventListener("click", function () {
+      copyToClipboard(generateLua(state));
+    });
+    renderMachines();
+    updatePreview();
+  }
+
+  if (typeof document !== "undefined" && document.addEventListener) {
+    document.addEventListener("DOMContentLoaded", init);
+  }
+</script>
+</body>
+</html>
