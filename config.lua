@@ -4,6 +4,14 @@
 -- アドレスは OpenComputers の "Analyzer" で機器を右クリックすると取得できます
 -- （先頭8文字程度の部分一致でOK）。
 -- side は require("sides") の値： bottom=0 top=1 north=2 south=3 west=4 east=5
+--
+-- 【1台 / 複数台】
+--   下記のようにトップレベルに機器設定を書くと1台構成（従来どおり）。
+--   複数台を1プロセスで回す場合は config.machines に台ごとの設定を並べる
+--   （ファイル末尾のコメント例を参照）。machines がある場合トップレベルの
+--   機器設定は無視され、pollInterval のみプロセス共通として使われる。
+--   ※ 複数台では各台に専用の inputMeInterfaceAddress と専用 databaseAddress が
+--     必須（fake recipe 名が database アドレス由来のため、共有すると混線する）。
 -- =============================================================================
 
 local sides = require("sides")
@@ -69,6 +77,41 @@ local config = {
   -- タイミング
   -- ---------------------------------------------------------------------------
   pollInterval = 0.5, -- dust 検知のポーリング間隔（秒）
+
+  -- ---------------------------------------------------------------------------
+  -- 複数台構成（任意）
+  --
+  -- 複数台を1プロセスで制御する場合は、上記の機器設定（inputMeInterfaceAddress /
+  -- databaseAddress / fluidSources / dust）の代わりに machines に台ごとの設定を
+  -- 並べる。各台の中身は1台構成のトップレベルと同じ形。
+  -- machines を有効化すると、トップレベルの機器設定は無視され pollInterval のみ
+  -- 共通で使われる。各台は毎ティック順番に1サイクルずつ処理される（逐次）。
+  --
+  -- ※ 各台には専用の inputMeInterfaceAddress と専用 databaseAddress を指定すること
+  --   （重複すると起動時にエラーで停止する）。
+  --
+  -- machines = {
+  --   {
+  --     name = "台1",
+  --     inputMeInterfaceAddress = "11111111-1111-1111-1111-111111111111",
+  --     databaseAddress         = "22222222-2222-2222-2222-222222222222",
+  --     fluidSources = {
+  --       { name="Fluid A", transposerAddress="33333333-...", sourceSide=sides.north, sourceTank=1, sinkSide=sides.south },
+  --       { name="Fluid B", transposerAddress="33333333-...", sourceSide=sides.north, sourceTank=1, sinkSide=sides.south },
+  --     },
+  --     dust = { transposerAddress="44444444-...", busSide=sides.north, trashSide=sides.south, busSlot=1 },
+  --   },
+  --   {
+  --     name = "台2",
+  --     inputMeInterfaceAddress = "55555555-5555-5555-5555-555555555555",
+  --     databaseAddress         = "66666666-6666-6666-6666-666666666666",
+  --     fluidSources = {
+  --       { name="Fluid A", transposerAddress="77777777-...", sourceSide=sides.north, sourceTank=1, sinkSide=sides.south },
+  --       { name="Fluid B", transposerAddress="77777777-...", sourceSide=sides.north, sourceTank=1, sinkSide=sides.south },
+  --     },
+  --     dust = { transposerAddress="88888888-...", busSide=sides.north, trashSide=sides.south, busSlot=1 },
+  --   },
+  -- },
 }
 
 return config

@@ -40,10 +40,34 @@ OpenComputers (1.7.10) 用スクリプトです。
 | `databaseAddress` | 通常は `nil`（`component.database` を自動使用）。複数ある場合のみ指定 |
 | `fluidSources` | Output Hatch ×2。各 `{ name, transposerAddress, sourceSide, sourceTank, sinkSide }`。`sourceSide`=Hatch 向き / `sinkSide`=Input Hatch 向き。どちらが Spatial / Tachyon かは区別不要（順不同） |
 | `dust` | `{ transposerAddress, busSide, trashSide, busSlot }`。`busSide`=Output Bus / `trashSide`=Trashcan |
-| `pollInterval` | dust 検知のポーリング間隔（秒、既定 `0.5`） |
+| `pollInterval` | dust 検知のポーリング間隔（秒、既定 `0.5`）。プロセス共通 |
+| `machines` | （任意）複数台構成用。台ごとの設定（上記 `inputMeInterfaceAddress`／`databaseAddress`／`fluidSources`／`dust` と同じ形）の配列。指定するとトップレベルの機器設定は無視される |
 
 > アドレスは OpenComputers の **Analyzer** で機器を右クリックすると取得できます（先頭 8 文字程度の部分一致で可）。
 > `side` は `bottom=0 top=1 north=2 south=3 west=4 east=5`。
+
+### 複数台を 1 プロセスで制御する
+
+`config.machines` に台ごとの設定を並べると、**1 プロセスで複数台**を制御できます。各台は毎ティック
+順番に 1 サイクルずつ処理されます（逐次マルチプレクス）。`machines` を指定した場合、トップレベルの
+機器設定は無視され、`pollInterval` のみがプロセス共通として使われます。`machines` を書かなければ
+従来どおり 1 台構成として動作します（挙動は変わりません）。
+
+```lua
+config = {
+  pollInterval = 0.5,
+  machines = {
+    { name = "台1", inputMeInterfaceAddress = "...", databaseAddress = "...", fluidSources = { ... }, dust = { ... } },
+    { name = "台2", inputMeInterfaceAddress = "...", databaseAddress = "...", fluidSources = { ... }, dust = { ... } },
+  },
+}
+```
+
+> **複数台では各台に専用の `inputMeInterfaceAddress` と専用の `databaseAddress` が必須です。**
+> fake recipe 名は database アドレス（先頭 8 文字）から作られるため、共有すると他台の発注と混線します。
+> Input ME Interface も fake pattern を slot1 に書き込むため共有できません。重複を検出した場合は
+> 起動時にエラーで停止します。各台にはそれぞれ専用の **Adapter + Database Upgrade (Tier 3)** と
+> **Input ME Interface** を用意してください（Transposer / Output Hatch / Output Bus / Trashcan も台ごとに必要）。
 
 ## 実行
 
