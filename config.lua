@@ -36,7 +36,7 @@ local config = {
   --
   -- 各 Output Hatch には専用の Transposer を隣接させる。
   -- 必要 plasma 量は |amountA - amountB| から計算するため、どちらが Spatial /
-  -- Tachyon かは区別不要（順不同でよい）。name は表示用のラベル。
+  -- Tachyon かは区別不要（順不同でよい）。
   --
   -- 【重要・配置要件】
   --   transferFluid は「同一 Transposer 上の source ↔ sink 間」でしか行えない。
@@ -46,14 +46,12 @@ local config = {
   -- ---------------------------------------------------------------------------
   fluidSources = {
     {
-      name = "Fluid A",
       transposerAddress = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
       sourceSide = sides.north, -- Output Hatch 向き（読み取り元）
       sourceTank = 1,           -- 通常 1
       sinkSide   = sides.south, -- Input Hatch 向き（再循環先）
     },
     {
-      name = "Fluid B",
       transposerAddress = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
       sourceSide = sides.north,
       sourceTank = 1,
@@ -96,8 +94,8 @@ local config = {
   --     inputMeInterfaceAddress = "11111111-1111-1111-1111-111111111111",
   --     databaseAddress         = "22222222-2222-2222-2222-222222222222",
   --     fluidSources = {
-  --       { name="Fluid A", transposerAddress="33333333-...", sourceSide=sides.north, sourceTank=1, sinkSide=sides.south },
-  --       { name="Fluid B", transposerAddress="33333333-...", sourceSide=sides.north, sourceTank=1, sinkSide=sides.south },
+  --       { transposerAddress="33333333-...", sourceSide=sides.north, sourceTank=1, sinkSide=sides.south },
+  --       { transposerAddress="33333333-...", sourceSide=sides.north, sourceTank=1, sinkSide=sides.south },
   --     },
   --     dust = { transposerAddress="44444444-...", busSide=sides.north, trashSide=sides.south, busSlot=1 },
   --   },
@@ -106,8 +104,8 @@ local config = {
   --     inputMeInterfaceAddress = "55555555-5555-5555-5555-555555555555",
   --     databaseAddress         = "66666666-6666-6666-6666-666666666666",
   --     fluidSources = {
-  --       { name="Fluid A", transposerAddress="77777777-...", sourceSide=sides.north, sourceTank=1, sinkSide=sides.south },
-  --       { name="Fluid B", transposerAddress="77777777-...", sourceSide=sides.north, sourceTank=1, sinkSide=sides.south },
+  --       { transposerAddress="77777777-...", sourceSide=sides.north, sourceTank=1, sinkSide=sides.south },
+  --       { transposerAddress="77777777-...", sourceSide=sides.north, sourceTank=1, sinkSide=sides.south },
   --     },
   --     dust = { transposerAddress="88888888-...", busSide=sides.north, trashSide=sides.south, busSlot=1 },
   --   },

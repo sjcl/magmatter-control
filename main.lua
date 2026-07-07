@@ -62,7 +62,7 @@ end
 
 -- -----------------------------------------------------------------------------
 -- 1台分の制御インスタンス
--- 台ごとに専用のコンポーネント proxy と状態（expectedFakeCount 等）を保持する。
+-- 台ごとに専用のコンポーネント proxy と状態を保持する。
 -- mc = 1台分の config テーブル（inputMeInterfaceAddress / databaseAddress /
 --       fluidSources / dust / name）。
 -- -----------------------------------------------------------------------------
@@ -88,7 +88,6 @@ local function makeMachine(mc)
 
   local fakeRecipeName = "Fake recipe "..database.address:sub(1, 8)
   local plasmaIndex = {} -- label → database slot index
-  local expectedFakeCount = 0 -- 発注済みで未完了の fake recipe 数（プログラム側の期待値）
 
   -- ---------------------------------------------------------------------------
   -- database / fake pattern
@@ -164,20 +163,6 @@ local function makeMachine(mc)
     end
   end
 
-  ---発注中の fake recipe(=paper) の合計個数を返す
-  local function fakeOutputCount()
-    local total = 0
-    for _, value in pairs(meInterface.getCpus()) do
-      if value.cpu.isBusy() == true then
-        local output = value.cpu.finalOutput()
-        if output ~= nil and output.label == fakeRecipeName then
-          total = total + (output.size or 0)
-        end
-      end
-    end
-    return total
-  end
-
   ---fake recipe を1個発注（プランニング完了まで待つ）
   ---@return boolean success
   local function requestCraft()
@@ -191,26 +176,7 @@ local function makeMachine(mc)
       os.sleep(0.05)
     end
 
-    if craft.hasFailed() == false then
-      expectedFakeCount = expectedFakeCount + 1
-      return true
-    end
-
-    -- hasFailed() 誤検知対策（失敗報告時のみ・通常ループには負荷を足さない）。
-    -- 発注前の問い合わせはせず、プログラム側カウンタを基準に積み増しを検知する。
-    local deadline = computer.uptime() + 1
-    repeat
-      local actual = fakeOutputCount()
-      if actual > expectedFakeCount then
-        expectedFakeCount = expectedFakeCount + 1 -- 実際は発注成功
-        return true
-      elseif actual < expectedFakeCount then
-        expectedFakeCount = actual -- 差分マイナス：再同期して従来挙動へ
-        return false
-      end
-      os.sleep(0.05)
-    until computer.uptime() > deadline
-    return false
+    return true
   end
 
   ---前回の残骸（実行中の fake recipe craft）をキャンセル

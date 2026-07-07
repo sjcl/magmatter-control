@@ -38,7 +38,7 @@ OpenComputers (1.7.10) 用スクリプトです。
 |------|------|
 | `inputMeInterfaceAddress` | fake pattern を発注する Input ME Interface のアドレス |
 | `databaseAddress` | 通常は `nil`（`component.database` を自動使用）。複数ある場合のみ指定 |
-| `fluidSources` | Output Hatch ×2。各 `{ name, transposerAddress, sourceSide, sourceTank, sinkSide }`。`sourceSide`=Hatch 向き / `sinkSide`=Input Hatch 向き。どちらが Spatial / Tachyon かは区別不要（順不同） |
+| `fluidSources` | Output Hatch ×2。各 `{ transposerAddress, sourceSide, sourceTank, sinkSide }`。`sourceSide`=Hatch 向き / `sinkSide`=Input Hatch 向き。どちらが Spatial / Tachyon かは区別不要（順不同） |
 | `dust` | `{ transposerAddress, busSide, trashSide, busSlot }`。`busSide`=Output Bus / `trashSide`=Trashcan |
 | `pollInterval` | dust 検知のポーリング間隔（秒、既定 `0.5`）。プロセス共通 |
 | `machines` | （任意）複数台構成用。台ごとの設定（上記 `inputMeInterfaceAddress`／`databaseAddress`／`fluidSources`／`dust` と同じ形）の配列。指定するとトップレベルの機器設定は無視される |
