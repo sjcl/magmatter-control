@@ -191,8 +191,8 @@
       name: "台" + n,
       inputMeInterfaceAddress: "",
       databaseAddress: "",
-      fluidA: { name: "Fluid A", transposer: "", sourceSide: "north", sourceTank: "1", sinkSide: "south" },
-      fluidB: { name: "Fluid B", transposer: "", sourceSide: "north", sourceTank: "1", sinkSide: "south" },
+      fluidA: { transposer: "", sourceSide: "north", sourceTank: "1", sinkSide: "south" },
+      fluidB: { transposer: "", sourceSide: "north", sourceTank: "1", sinkSide: "south" },
       dust:   { transposer: "", busSide: "north", trashSide: "south", busSlot: "1" }
     };
   }
@@ -212,8 +212,7 @@
     return isFinite(n) ? n : d;
   }
   function fluidLua(f) {
-    return "{ name = " + luaStr(f.name) +
-      ", transposerAddress = " + luaStr((f.transposer || "").trim()) +
+    return "{ transposerAddress = " + luaStr((f.transposer || "").trim()) +
       ", sourceSide = sides." + f.sourceSide +
       ", sourceTank = " + intOr(f.sourceTank, 1) +
       ", sinkSide = sides." + f.sinkSide + " }";
@@ -326,7 +325,6 @@
   function fluidGroup(title, f) {
     var g = el("div", { class: "subgroup" }, [el("div", { class: "sub-title", text: title })]);
     var grid = el("div", { class: "fields-grid" });
-    grid.appendChild(field("name", textInput(f.name, "Fluid A", function (v) { f.name = v; })));
     grid.appendChild(field("transposerAddress", textInput(f.transposer, "aaaaaaaa-…", function (v) { f.transposer = v; }), true));
     grid.appendChild(field("sourceSide（Output Hatch 向き）", sideSelect(f.sourceSide, function (v) { f.sourceSide = v; })));
     grid.appendChild(field("sinkSide（Input Hatch 向き）", sideSelect(f.sinkSide, function (v) { f.sinkSide = v; })));
