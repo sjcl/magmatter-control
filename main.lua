@@ -1,5 +1,5 @@
 -- =============================================================================
--- Magmatter 生産制御 (OpenComputers 1.7.10 / GTNH Heliofusion Exoticizer)
+-- Magmatter 生産制御 (OpenComputers / GTNH 2.9 Heliofusion Exoticizer)
 --
 -- 仕組み（1サイクル）:
 --   1. Output Bus の dust を検知（= 1 サイクル分の出力が揃った合図）
@@ -45,7 +45,7 @@ local plasmaList = {
 
 -- -----------------------------------------------------------------------------
 -- 必要 plasma 量の係数： amount = ceil(|amountA - amountB| * PLASMA_PER_DUST)
--- 1 dust = 144 fluid_drop。この値はどの環境でも固定。
+-- 1 dust = 144 mB。この値はどの環境でも固定。
 -- -----------------------------------------------------------------------------
 local PLASMA_PER_DUST = 144
 
@@ -67,7 +67,16 @@ end
 --       fluidSources / dust / name）。
 -- -----------------------------------------------------------------------------
 local function makeMachine(mc)
-  local meInterface = discoverProxy(mc.inputMeInterfaceAddress, "Input ME Interface", "me_interface")
+  -- 2.9: ME Dual Interface は fluid_interface として公開される。
+  local address = component.get(mc.inputMeInterfaceAddress, "me_interface")
+    or component.get(mc.inputMeInterfaceAddress, "fluid_interface")
+  if not address then
+    error("Invalid address (me_interface/fluid_interface): Input ME Interface "..tostring(mc.inputMeInterfaceAddress))
+  end
+  local meInterface = component.proxy(address)
+  if not meInterface.setInterfacePatternInput or not meInterface.getInterfacePattern then
+    error("Input ME Interface does not expose pattern methods: "..address)
+  end
 
   local database = mc.databaseAddress
     and discoverProxy(mc.databaseAddress, "Database", "database")
@@ -87,56 +96,63 @@ local function makeMachine(mc)
   end
 
   local fakeRecipeName = "Fake recipe "..database.address:sub(1, 8)
-  local plasmaIndex = {} -- label → database slot index
 
   -- ---------------------------------------------------------------------------
   -- database / fake pattern
   -- ---------------------------------------------------------------------------
 
-  ---database に paper(=fake recipe) と各 plasma を登録
+  ---database に paper (=fake recipe) を登録
   local function fillDatabase()
     database.set(1, "minecraft:paper", 0, "{display:{Name:\""..fakeRecipeName.."\"}}")
-
-    local index = 2
-    for label, fluid in pairs(plasmaList) do
-      local ok = database.set(index, "ae2fc:fluid_drop", 0, "{Fluid:\""..fluid.."\"}")
-      if ok == false then
-        error("Failed to register in database: "..label)
-      end
-      plasmaIndex[label] = index
-      index = index + 1
-    end
   end
 
   ---パターン1の入出力を初期化（output=paper / input=paper）
   local function clearPattern()
     local pattern = meInterface.getInterfacePattern(1)
     if pattern == nil then
-      error("No pattern in slot 1 of the Input ME Interface (insert an empty fluid template)")
+      error("No pattern in slot 1 of the Input ME Interface (insert an encoded Processing Pattern)")
+    end
+    if pattern.name ~= "appliedenergistics2:item.ItemEncodedUltimatePattern" then
+      error("Slot 1 must contain an AE2 Processing Pattern (not a crafting or legacy fluid pattern)")
     end
 
-    for key in pairs(pattern.outputs) do
-      meInterface.clearInterfacePatternOutput(1, key)
-    end
-    for key in pairs(pattern.inputs) do
-      meInterface.clearInterfacePatternInput(1, key)
-    end
+    -- 2.9: index は第2引数。先頭を上書きしてから余分な要素を末尾から削除する。
+    -- 途中で入力/出力が空になって Processing Pattern が無効になることを避ける。
+    assert(meInterface.setInterfacePatternOutput(1, 1, database.address, 1, 1))
+    assert(meInterface.setInterfacePatternInput(1, 1, database.address, 1, 1))
 
-    meInterface.setInterfacePatternOutput(1, database.address, 1, 1, 1)
-    meInterface.setInterfacePatternInput(1, database.address, 1, 1, 1)
+    local function clearExtra(stacks, clear)
+      local indices = {}
+      for key in pairs(stacks) do
+        if type(key) == "number" and key > 1 then
+          indices[#indices + 1] = key
+        end
+      end
+      table.sort(indices, function(a, b) return a > b end)
+      for _, index in ipairs(indices) do
+        assert(clear(1, index))
+      end
+    end
+    clearExtra(pattern.outputs, meInterface.clearInterfacePatternOutput)
+    clearExtra(pattern.inputs, meInterface.clearInterfacePatternInput)
   end
 
-  ---必要な plasma を input slot1 にエンコード（1サイクル1種なので1スロットのみ）
+  ---必要な plasma をネイティブ Fluid Stack として input slot1 にエンコード
   ---@param label string
-  ---@param amount number
+  ---@param amount number mB
   ---@return boolean
   local function encodePattern(label, amount)
-    local index = plasmaIndex[label]
-    if index == nil then
+    local fluid = plasmaList[label]
+    if fluid == nil then
       return false
     end
-    meInterface.setInterfacePatternInput(1, database.address, index, amount, 1)
-    return true
+    -- Database 経由ではアイテムの最大スタック数に制限される。
+    -- amount は FluidStack の生成用、size が AE Stack の実際の数量。
+    return meInterface.setInterfacePatternInput(1, 1, {
+      name = fluid,
+      amount = 1,
+      size = amount,
+    }, "fluid") == true
   end
 
   -- ---------------------------------------------------------------------------

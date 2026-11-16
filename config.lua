@@ -2,7 +2,7 @@
 -- Magmatter 生産制御 設定ファイル
 --
 -- アドレスは OpenComputers の "Analyzer" で機器を右クリックすると取得できます
--- （先頭8文字程度の部分一致でOK）。
+-- （先頭8文字程度の部分一致でOK）。2.9 への更新後は UUID を再確認してください。
 -- side は require("sides") の値： bottom=0 top=1 north=2 south=3 west=4 east=5
 --
 -- 【1台 / 複数台】
@@ -20,7 +20,8 @@ local config = {
   -- ---------------------------------------------------------------------------
   -- Input ME Interface
   -- fake pattern をエンコードして plasma を発注する入力側の ME Interface。
-  -- slot1 に「空の液体クラフトテンプレート（ピンク）」を1枚入れておくこと。
+  -- slot1 に AE2 のエンコード済み Processing Pattern を1枚入れておくこと。
+  -- ME Dual Interface は fluid_interface として認識される場合がある。
   -- ---------------------------------------------------------------------------
   inputMeInterfaceAddress = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
 

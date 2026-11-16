@@ -3,13 +3,15 @@
 GregTech New Horizons の **Heliofusion Exoticizer** で Molten Magmatter を自動生産する
 OpenComputers (1.7.10) 用スクリプトです。
 
+このバージョンは **GTNH 2.9.0**（OpenComputers 1.12.68-GTNH）向けです。2.8.4 以前の API とは互換性がありません。
+
 ## 仕組み
 
 1. **Output Bus の dust を検知**（= 1 サイクル分の出力が揃った合図）
 2. **2 つの Output Hatch の液体量**（Spatially Enlarged Fluid / Tachyon Rich Temporal Fluid）を読む
-3. 必要 plasma 量を計算： `ceil(|液体A − 液体B| × 144)`（1 dust = 144 fluid_drop）
+3. 必要 plasma 量を計算： `ceil(|液体A − 液体B| × 144)`（1 dust = 144 mB）
 4. **dust のラベルから plasma 種類を判定**
-5. database + Input ME Interface の **fake pattern にエンコードして発注**
+5. Database の名前付き paper を出力、ネイティブ Fluid Stack を入力とする Input ME Interface の **fake pattern にエンコードして発注**
 6. 発注成功時のみ：液体を **Input Hatch へ再循環**し、dust を **Trashcan へ廃棄**
 
 > Gluon (Quark-Gluon Plasma) モードは非対応です。
@@ -18,7 +20,7 @@ OpenComputers (1.7.10) 用スクリプトです。
 
 - Computer（GPU/CPU/RAM/HDD/EEPROM、OpenOS インストール済み）
 - **Adapter + Database Upgrade (Tier 3)** … 1 セット
-- **Input ME Interface**（fake pattern 発注用）… slot1 に **空の液体クラフトテンプレート（ピンク）** を 1 枚入れておく
+- **Input ME Interface**（fake pattern 発注用）… slot1 に **エンコード済み AE2 Processing Pattern** を 1 枚入れておく（液体を直接出力する構成では ME Dual Interface を使用）
 - **Transposer**（機器ごとに 1 台）
   - 各 Output Hatch ×2 用
   - Output Bus 用（Trashcan と同一 Transposer の両側に隣接させる）
@@ -45,6 +47,15 @@ OpenComputers (1.7.10) 用スクリプトです。
 
 > アドレスは OpenComputers の **Analyzer** で機器を右クリックすると取得できます（先頭 8 文字程度の部分一致で可）。
 > `side` は `bottom=0 top=1 north=2 south=3 west=4 east=5`。
+
+### GTNH 2.8.4 からの移行
+
+1. Computer で `components` を実行し、`me_interface` または `fluid_interface` の UUID を確認する。更新後に UUID が変わっている場合は `config.lua` の `inputMeInterfaceAddress` を更新する。Database と Transposer の UUID も確認する。
+2. slot1 の旧液体テンプレートを、ME Processing Pattern Terminal で適当な入力・出力を設定してエンコードした **Processing Pattern**（通常の Crafting Pattern ではない）に交換する。起動時に内容は上書きされる。
+3. 新しい `main.lua` を配置する。Database は fake recipe 用 paper の登録に引き続き必要だが、Fluid Drop の登録は不要。
+4. 最初は1サイクルだけ実行し、パターンの入力が正しい種類・数量の液体になっていることと、plasma が意図した宛先に供給されることを確認する。
+
+2.9 では [OpenComputers #169](https://github.com/GTNewHorizons/OpenComputers/pull/169) によりパターン API の引数順序が変更された。Database 経由の数量制限を回避するため、plasma は `fluid` 型のネイティブ Stack として指定する。
 
 ### 複数台を 1 プロセスで制御する
 
@@ -81,7 +92,7 @@ main
 
 ## 動作確認
 
-1. `config.lua` を自環境に合わせて記入。Input ME Interface の slot1 に空の液体テンプレートを入れる。
+1. `config.lua` を自環境に合わせて記入。Input ME Interface の slot1 にエンコード済み Processing Pattern を入れる。
 2. `main` 実行 → 起動バナーと「待機中」表示を確認。
 3. 機械を稼働させ、dust 出力時に
    (a) 液体が Input Hatch へ移動 /
