@@ -20,7 +20,7 @@ OpenComputers (1.7.10) 用スクリプトです。
 
 - Computer（GPU/CPU/RAM/HDD/EEPROM、OpenOS インストール済み）
 - **Adapter + Database Upgrade (Tier 3)** … 1 セット
-- **Input ME Interface**（fake pattern 発注用）… slot1 に **エンコード済み AE2 Processing Pattern** を 1 枚入れておく（液体を直接出力する構成では ME Dual Interface を使用）
+- **ME Dual Interface + Fake Crafting Card**（fake pattern 発注用）… slot1 に **エンコード済み AE2 Processing Pattern** を 1 枚入れておく
 - **Transposer**（機器ごとに 1 台）
   - 各 Output Hatch ×2 用
   - Output Bus 用（Trashcan と同一 Transposer の両側に隣接させる）
