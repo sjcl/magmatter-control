@@ -18,7 +18,18 @@
 
 local component = require("component")
 local computer = require("computer")
-local config = require("config")
+local filesystem = require("filesystem")
+local shell = require("shell")
+local process = require("process")
+
+-- 設定はライブラリではないので require のキャッシュや検索パスを使用しない。
+-- OpenOS で起動した main.lua の隣にある config.lua を起動ごとに読み込む。
+local scriptPath = assert(shell.resolve(process.info().path, "lua"))
+local configPath = filesystem.concat(filesystem.path(scriptPath), "config.lua")
+local config = dofile(configPath)
+if type(config) ~= "table" then
+  error("Config must return a table: "..configPath)
+end
 
 -- -----------------------------------------------------------------------------
 -- Magmatter 用 plasma テーブル （dust ラベル → plasma fluid id）
